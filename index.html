@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="记账">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>记账看板</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f2f2f7;
+  --surface: #ffffff;
+  --surface-2: #f6f6f9;
+  --border: rgba(60, 60, 67, .10);
+  --grid: rgba(60, 60, 67, .08);
+  --text: #111114;
+  --text-2: #55555c;
+  --text-3: #8a8a93;
+  --accent: #2a78d6;
+  --expense: #2a78d6;
+  --income: #eb6834;
+  --up: #d93a3a;
+  --down: #12924a;
+  --hero-a: #2a78d6;
+  --hero-b: #6250d6;
+  --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(20,20,40,.06);
+  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100;
+  --c5: #e87ba4; --c6: #008300; --c7: #6250d6; --c8: #e34948; --c0: #9a9aa2;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #000000;
+    --surface: #1c1c1e;
+    --surface-2: #2c2c2e;
+    --border: rgba(255,255,255,.08);
+    --grid: rgba(255,255,255,.07);
+    --text: #f2f2f5;
+    --text-2: #c2c2c8;
+    --text-3: #8d8d95;
+    --accent: #3987e5;
+    --expense: #3987e5;
+    --income: #d95926;
+    --up: #ff6b6b;
+    --down: #4cd07d;
+    --hero-a: #1f5fb0;
+    --hero-b: #4b3cb0;
+    --shadow: none;
+    --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500;
+    --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767; --c0: #6e6e76;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #000000; --surface: #1c1c1e; --surface-2: #2c2c2e;
+  --border: rgba(255,255,255,.08); --grid: rgba(255,255,255,.07);
+  --text: #f2f2f5; --text-2: #c2c2c8; --text-3: #8d8d95;
+  --accent: #3987e5; --expense: #3987e5; --income: #d95926; --up: #ff6b6b; --down: #4cd07d;
+  --hero-a: #1f5fb0; --hero-b: #4b3cb0; --shadow: none;
+  --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500;
+  --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767; --c0: #6e6e76;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+/* No sideways scrolling or rubber-band bounce: in the Mac menu bar popover a trackpad swipe made the page wobble left and right. */
+html { -webkit-text-size-adjust: 100%; overflow-x: hidden; overscroll-behavior-x: none; }
+body {
+  margin: 0; background: var(--page); color: var(--text);
+  font: 15px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+button, select, input { font: inherit; color: inherit; }
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+main {
+  max-width: 1040px; margin: 0 auto;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 40px max(16px, env(safe-area-inset-left));
+}
+
+/* ---------- top bar ---------- */
+.top { display: flex; align-items: center; gap: 10px; margin: 4px 0 14px; }
+.top h1 { font-size: 26px; font-weight: 700; letter-spacing: -.01em; margin: 0; flex: 1; }
+.pill {
+  appearance: none; -webkit-appearance: none; border: 0; cursor: pointer;
+  background: var(--surface); box-shadow: var(--shadow); border-radius: 999px;
+  padding: 7px 14px; font-size: 14px; font-weight: 500;
+}
+select.pill { padding-right: 30px; background-image: linear-gradient(45deg, transparent 50%, var(--text-3) 50%), linear-gradient(135deg, var(--text-3) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 52%, calc(100% - 11px) 52%; background-size: 5px 5px; background-repeat: no-repeat; }
+.iconbtn { width: 34px; height: 34px; padding: 0; display: grid; place-items: center; }
+.iconbtn svg { width: 18px; height: 18px; stroke: var(--text-2); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- layout ---------- */
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+.grid > .wide { grid-column: 1 / -1; }
+@media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+.card { background: var(--surface); border-radius: 18px; padding: 16px; box-shadow: var(--shadow); min-width: 0; }
+.card h2 { font-size: 17px; font-weight: 600; margin: 0 0 12px; display: flex; align-items: baseline; gap: 8px; }
+.card h2 small { font-size: 13px; color: var(--text-3); font-weight: 400; margin-left: auto; }
+
+/* ---------- summary (month total, pace chart, key numbers) ---------- */
+.hero { background: var(--surface); border-radius: 18px; padding: 18px 18px 12px; box-shadow: var(--shadow); min-width: 0; }
+.hero .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.hero .label { font-size: 13px; color: var(--text-2); }
+.hero .value { font-size: 40px; font-weight: 650; letter-spacing: -.02em; line-height: 1.1; margin: 2px 0 4px; }
+.hero .value .cents { font-size: 22px; color: var(--text-3); font-weight: 600; }
+.hero .delta { font-size: 12px; color: var(--text-2); }
+.hero .delta b { font-weight: 600; }
+.hero .delta .more-spend { color: var(--up); }
+.hero .delta .less-spend { color: var(--down); }
+.legend2 { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 11px; color: var(--text-3); white-space: nowrap; padding-top: 2px; }
+.legend2 i { display: inline-block; width: 12px; height: 0; border-top: 2px solid; vertical-align: 3px; margin-right: 5px; }
+.cum { margin: 10px 0 0; touch-action: pan-y; }
+.cum svg { display: block; width: 100%; overflow: visible; }
+.cum text { fill: var(--text-3); font-size: 10px; }
+.hero .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 10px; }
+.hero .stats div { padding: 9px 0 3px; border-top: 1px solid var(--grid); min-width: 0; }
+.hero .stats span { display: block; font-size: 11px; color: var(--text-3); }
+.hero .stats b { display: block; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (min-width: 761px) { body:not(.mini) .hero .stats { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+
+/* ---------- categories ---------- */
+.catwrap { display: grid; grid-template-columns: 132px 1fr; gap: 16px; align-items: center; }
+.donut { position: relative; width: 132px; height: 132px; }
+.donut svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.donut .center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.donut .center b { font-size: 16px; font-weight: 700; }
+.donut .center span { font-size: 11px; color: var(--text-3); }
+.cats { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cat {
+  display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center;
+  padding: 6px 6px; border-radius: 10px; border: 0; background: none; text-align: left; cursor: pointer; width: 100%;
+}
+.cat:hover { background: var(--surface-2); }
+.cat.on { background: var(--surface-2); outline: 1.5px solid var(--accent); }
+.ico { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-size: 16px; line-height: 1; }
+.cat .mid { min-width: 0; display: block; }
+.cat .name { font-size: 14px; display: flex; justify-content: space-between; gap: 8px; white-space: nowrap; }
+.cat .name span { color: var(--text-3); font-size: 12px; }
+.cat .track { display: block; height: 4px; border-radius: 2px; background: var(--surface-2); margin-top: 4px; overflow: hidden; }
+.cat .track i { display: block; height: 100%; border-radius: 2px; }
+.cat .amt { font-size: 14px; font-weight: 600; }
+@media (max-width: 480px) { .catwrap { grid-template-columns: 96px 1fr; gap: 12px; } .donut { width: 96px; height: 96px; } .donut .center b { font-size: 13px; } }
+
+/* ---------- frequent merchants ---------- */
+.merchants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+.merchant { display: flex; flex-direction: column; align-items: stretch; gap: 7px; min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-2); text-align: left; cursor: pointer; }
+.merchant:hover { border-color: var(--accent); }
+.merchant[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.merchant:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.merchant-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.merchant-head .ico { flex: 0 0 30px; }
+.merchant-name { font-size: 14px; font-weight: 600; min-width: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.merchant-count { font-size: 12px; color: var(--text-2); }
+.merchant-totals { margin-top: auto; }
+.merchant-total { display: block; font-size: 21px; font-weight: 650; overflow-wrap: anywhere; }
+.merchant-action { font-size: 12px; color: var(--accent); }
+.merchant-empty { grid-column: 1 / -1; }
+@media (max-width: 600px) { .merchants { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---------- charts ---------- */
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-2); margin: -4px 0 6px; }
+.legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { fill: var(--text-3); font-size: 11px; }
+.chart .sel { fill: var(--text); font-weight: 600; }
+.foot { font-size: 12px; color: var(--text-3); margin-top: 6px; }
+
+/* ---------- transactions ---------- */
+.searchbox { display: flex; align-items: center; gap: 8px; background: var(--surface-2); border-radius: 12px; padding: 0 8px 0 12px; margin-bottom: 10px; }
+.searchbox:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.searchbox svg { flex: 0 0 18px; width: 18px; height: 18px; stroke: var(--text-3); fill: none; stroke-width: 1.8; }
+.searchbox input { width: 100%; min-width: 0; flex: 1; border: 0; outline: none; background: none; padding: 12px 0; font-size: 16px; -webkit-appearance: none; }
+.searchbox input::-webkit-search-cancel-button { -webkit-appearance: none; }
+.searchclear { flex: 0 0 36px; height: 40px; border: 0; border-radius: 8px; background: none; color: var(--text-2); cursor: pointer; font-size: 18px; }
+.search-options { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 10px; }
+.search-options label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
+.search-options select { border: 1px solid var(--border); border-radius: 8px; padding: 6px; background: var(--surface); font-size: 16px; }
+.result-summary { font-size: 12px; color: var(--text-2); margin: 8px 0 0; overflow-wrap: anywhere; }
+.rows-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; justify-content: space-between; }
+.merchant-back { border: 0; background: var(--surface-2); border-radius: 8px; color: var(--accent); cursor: pointer; padding: 7px 10px; margin-bottom: 12px; font-size: 12px; }
+.seg { display: inline-flex; max-width: 100%; background: var(--surface-2); border-radius: 10px; padding: 2px; gap: 2px; }
+.seg button { flex: 1; border: 0; background: none; padding: 7px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; color: var(--text-2); white-space: nowrap; }
+.seg button.on { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+.row-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+#filter { display: flex; flex-wrap: wrap; gap: 6px; max-width: 100%; min-width: 0; }
+.filter { border: 0; background: var(--surface-2); color: var(--accent); border-radius: 12px; padding: 6px 10px; font-size: 12px; max-width: 100%; min-height: 32px; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
+.day { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-3); padding: 14px 2px 4px; }
+.tx { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto 10px; gap: 10px; align-items: center; padding: 10px 2px; width: 100%; border: 0; background: none; text-align: left; cursor: pointer; border-radius: 8px; }
+.tx:hover { background: var(--surface-2); }
+.tx:focus-visible, .searchclear:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tx + .tx { border-top: 1px solid var(--grid); }
+.tx .ico { width: 36px; height: 36px; border-radius: 11px; font-size: 18px; }
+.tx .what { min-width: 0; }
+.tx .what .title { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tx .sub { display: block; font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tx .amt { font-size: 15px; font-weight: 600; text-align: right; white-space: nowrap; }
+.tx .amt.in { color: var(--down); }
+.tx .chevron { color: var(--text-3); font-size: 20px; }
+.tag { display: inline-block; font-size: 10px; padding: 1px 5px; border-radius: 4px; background: var(--surface-2); color: var(--text-2); margin-left: 6px; vertical-align: 1px; }
+.more { display: block; width: 100%; margin-top: 10px; border: 0; background: var(--surface-2); color: var(--accent); border-radius: 10px; padding: 9px; cursor: pointer; font-size: 14px; }
+.empty { color: var(--text-3); padding: 16px 0; text-align: center; font-size: 14px; }
+@media (max-width: 380px) { .seg { display: flex; width: 100%; } .seg button { font-size: 12px; padding: 8px 5px; } .tx { gap: 8px; } }
+
+/* ---------- transaction details ---------- */
+body.detail-open { overflow: hidden; }
+#detail { width: min(520px, calc(100% - 32px)); max-height: 88vh; max-height: 88dvh; padding: 0; border: 0; border-radius: 22px; background: var(--surface); color: var(--text); box-shadow: 0 16px 64px rgba(0,0,0,.24); overscroll-behavior: contain; }
+#detail::backdrop { background: rgba(0,0,0,.45); backdrop-filter: blur(3px); }
+.detail-head { display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 1; background: var(--surface); padding: 14px 20px; border-bottom: 1px solid var(--border); }
+.detail-head h2 { margin: 0; flex: 1; font-size: 17px; }
+.detail-head button { border: 0; border-radius: 10px; padding: 10px 12px; background: var(--surface-2); color: var(--accent); cursor: pointer; }
+.detail-content { padding: 20px 20px max(24px, env(safe-area-inset-bottom)); }
+.detail-kind { font-size: 13px; color: var(--text-2); }
+.detail-amount { font-size: 36px; font-weight: 700; letter-spacing: -.02em; margin: 4px 0 12px; overflow-wrap: anywhere; }
+.detail-amount.in { color: var(--down); }
+.detail-description { margin: 0 0 8px; font-size: 19px; font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
+.detail-status { font-size: 13px; color: var(--text-2); margin-bottom: 20px; }
+.detail-fields { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 12px; margin: 0; font-size: 14px; }
+.detail-fields dt { color: var(--text-2); }
+.detail-fields dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.detail-sources { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+.detail-sources h3 { margin: 0 0 10px; font-size: 14px; }
+.detail-sources ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.detail-sources li { background: var(--surface-2); padding: 12px; border-radius: 12px; font-size: 13px; }
+.source-ref { display: block; margin-top: 4px; color: var(--text-2); overflow-wrap: anywhere; white-space: pre-wrap; }
+@media (max-width: 600px) { #detail { width: 100%; max-width: none; margin: auto 0 0; border-radius: 22px 22px 0 0; } }
+
+/* ---------- tooltip & lock ---------- */
+#tip {
+  position: fixed; pointer-events: none; z-index: 10; display: none; max-width: 260px;
+  background: var(--surface); color: var(--text); border-radius: 12px; padding: 8px 12px; font-size: 13px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.18); border: 1px solid var(--border);
+}
+#tip b { font-weight: 600; }
+#tip .row { display: flex; justify-content: space-between; gap: 14px; font-variant-numeric: tabular-nums; }
+#tip .sub { color: var(--text-3); font-size: 12px; }
+#lock { max-width: 360px; margin: 16vh auto 0; text-align: center; }
+#lock .logo { width: 64px; height: 64px; border-radius: 16px; margin: 0 auto 14px; background: linear-gradient(135deg, var(--hero-a), var(--hero-b)); display: grid; place-items: center; }
+#lock .logo svg { width: 30px; height: 30px; fill: #fff; }
+#lock h2 { margin: 0 0 4px; font-size: 22px; }
+#lock p { margin: 0 0 18px; color: var(--text-3); font-size: 14px; }
+#lock form { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+#lock input[type=password] { border: 0; background: var(--surface); box-shadow: var(--shadow); border-radius: 12px; padding: 12px 14px; font-size: 16px; }
+#lock label { font-size: 13px; color: var(--text-2); display: flex; gap: 6px; align-items: center; }
+#lock button { border: 0; border-radius: 12px; padding: 12px; background: var(--accent); color: #fff; font-weight: 600; font-size: 16px; cursor: pointer; }
+#lock .err { color: var(--up); font-size: 13px; min-height: 1.4em; text-align: center; }
+
+/* ---------- mini (Mac menu bar popover / narrow side window) ---------- */
+.show-mini { display: none; }
+body.mini .show-mini { display: block; }
+body.mini main { padding: 0 12px 14px; }
+body.mini .top {
+  position: sticky; top: 0; z-index: 5; margin: 0 -12px 8px; padding: 10px 12px 8px;
+  background: color-mix(in srgb, var(--page) 90%, transparent); -webkit-backdrop-filter: saturate(1.6) blur(18px); backdrop-filter: saturate(1.6) blur(18px);
+}
+body.app .top { background: color-mix(in srgb, var(--surface) 85%, transparent); }
+body.mini .top h1 { font-size: 17px; }
+body.mini .pill { box-shadow: none; background-color: var(--surface); border: 1px solid var(--border); padding: 5px 12px; font-size: 13px; }
+body.mini select.pill { padding-right: 26px; background-position: calc(100% - 14px) 52%, calc(100% - 9px) 52%; }
+body.mini .iconbtn { width: 30px; height: 30px; padding: 0; }
+body.mini .iconbtn svg { width: 15px; height: 15px; }
+body.mini.searching #find { background: var(--accent); border-color: var(--accent); }
+body.mini.searching #find svg { stroke: #fff; }
+body.mini .grid { grid-template-columns: 1fr; gap: 8px; }
+body.mini .hide-mini { display: none !important; }
+body.mini .card h2 { font-size: 13px; font-weight: 600; color: var(--text-2); margin: 0 0 8px; }
+body.mini .card h2 small { font-size: 12px; }
+
+/* flat sections divided by hairlines instead of separate cards */
+body.mini .grid { gap: 0; }
+body.mini .card, body.mini .hero { background: none; border: 0; border-radius: 0; box-shadow: none; padding: 14px 2px; }
+body.mini .grid > section + section { border-top: 1px solid var(--border); }
+body.mini .hero { padding-top: 6px; }
+body.mini .hero .value { font-size: 34px; }
+body.mini .hero .value .cents { font-size: 19px; }
+body.mini .hero .stats b { font-size: 14px; }
+
+/* last 7 days, mini only */
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; height: 92px; }
+.week .d { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; min-width: 0; gap: 4px; }
+.week .v { font-size: 10px; color: var(--text-3); white-space: nowrap; }
+.week .b { width: 100%; max-width: 26px; border-radius: 5px; background: color-mix(in srgb, var(--expense) 35%, transparent); min-height: 3px; }
+.week .d.today .b { background: var(--expense); }
+.week .d.today .v, .week .d.today .w { color: var(--text); font-weight: 600; }
+.week .w { font-size: 11px; color: var(--text-3); }
+
+/* categories: one stacked bar instead of the donut */
+.stack { display: none; }
+body.mini .stack { display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px; margin: 2px 0 8px; background: var(--surface-2); }
+.stack i { display: block; height: 100%; }
+body.mini .catwrap { display: block; }
+body.mini .donut { display: none !important; }
+body.mini .cat { grid-template-columns: 10px 1fr auto auto; gap: 8px; padding: 5px 4px; border-radius: 8px; }
+body.mini .cat .dot { width: 8px; height: 8px; border-radius: 50%; }
+body.mini .cat .name { font-size: 13px; }
+body.mini .cat .pct { font-size: 12px; color: var(--text-3); }
+body.mini .cat .amt { font-size: 13px; min-width: 64px; text-align: right; }
+body.mini .cat.on { outline-width: 1px; }
+
+/* transactions */
+body.mini:not(.searching) .searchbox, body.mini:not(.searching) .search-options { display: none; }
+body.mini .searchbox { border-radius: 10px; margin-bottom: 8px; }
+body.mini .searchbox input { padding: 8px 0; font-size: 14px; }
+body.mini .search-options { margin-bottom: 8px; }
+body.mini .search-options select { font-size: 13px; padding: 3px 6px; }
+body.mini .seg { display: flex; width: 100%; border-radius: 9px; }
+body.mini .seg button { font-size: 12px; padding: 5px 4px; border-radius: 7px; }
+body.mini .result-summary { font-size: 11px; color: var(--text-3); margin-top: 6px; }
+body.mini .day { font-size: 11px; padding: 10px 2px 2px; }
+body.mini .tx { grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; padding: 7px 2px; }
+body.mini .tx .ico { width: 30px; height: 30px; border-radius: 9px; font-size: 15px; }
+body.mini .tx .what .title { font-size: 13.5px; }
+body.mini .tx .sub { font-size: 11px; }
+body.mini .tx .amt { font-size: 13.5px; }
+body.mini .tx .chevron { display: none; }
+body.mini .more { font-size: 13px; padding: 7px; }
+body.mini #gen { font-size: 11px; margin-top: 10px !important; }
+/* order in the small window: summary → today → 7 days → categories → merchants → all payments; merchants as a plain list */
+body.mini #weekcard { order: 1; }
+body.mini #catcard { order: 2; }
+body.mini #todaycard { order: 3; }
+body.mini #merchantcard { order: 4; }
+body.mini .grid > section:last-child { order: 5; }
+body.mini #merchantcard .foot, body.mini .merchant-action { display: none; }
+body.mini .merchants { grid-template-columns: 1fr; gap: 0; margin-top: 0; }
+body.mini .merchant { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 6px 4px; border: 0; border-radius: 8px; background: none; }
+body.mini .merchant:hover { background: var(--surface-2); }
+body.mini .merchant-head .ico { display: none; }
+body.mini .merchant-name { font-size: 13px; font-weight: 400; -webkit-line-clamp: 1; }
+body.mini .merchant-count { font-size: 12px; color: var(--text-3); }
+body.mini .merchant-totals { margin: 0; min-width: 64px; text-align: right; }
+body.mini .merchant-total { font-size: 13px; font-weight: 600; }
+body.mini .merchant-back { padding: 4px 8px; margin-bottom: 6px; }
+body.app .top .iconbtn#mini { display: none; }
+body.app { background: transparent; }
+</style>
+</head>
+<body>
+<div id="tip"></div>
+
+<main id="lock" hidden>
+  <div class="logo"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="4" height="9" rx="1.2"/><rect x="10" y="5" width="4" height="15" rx="1.2"/><rect x="16" y="8" width="4" height="12" rx="1.2"/></svg></div>
+  <h2>记账看板</h2>
+  <p>输入密码查看你的账本</p>
+  <form id="lockform">
+    <input id="pw" type="password" autocomplete="current-password" placeholder="密码" required>
+    <label><input id="remember" type="checkbox" checked> 在这台设备上记住密码</label>
+    <button type="submit">打开</button>
+    <div class="err" id="lockerr"></div>
+  </form>
+</main>
+
+<main id="app" hidden>
+  <div class="top">
+    <h1>记账</h1>
+    <select class="pill" id="month" aria-label="选择月份"></select>
+    <button class="pill iconbtn" id="find" type="button" aria-label="跳到搜索账目" title="搜索账目"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button>
+    <button class="pill iconbtn" id="mini" type="button" title="切换迷你模式"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M14 4v16"/></svg></button>
+  </div>
+
+  <div class="grid">
+    <section class="hero wide" id="hero"></section>
+
+    <section class="card wide" id="merchantcard" aria-labelledby="merchant-title">
+      <h2 id="merchant-title" tabindex="-1">常去商户<small id="merchantnote"></small></h2>
+      <div class="foot">按支出笔数排序 · 点商户查看历史账目</div>
+      <div class="merchants" id="merchants"></div>
+      <button class="more" id="merchant-more" type="button" hidden></button>
+    </section>
+
+    <section class="card wide show-mini" id="weekcard">
+      <h2>近 7 天<small id="weeknote"></small></h2>
+      <div class="week num" id="week"></div>
+    </section>
+
+    <section class="card" id="catcard">
+      <h2>分类支出<small id="catnote"></small></h2>
+      <div class="stack show-mini" id="stack"></div><div class="catwrap"><div class="donut" id="donut"></div><div class="cats" id="cats"></div></div>
+    </section>
+
+    <section class="card hide-mini">
+      <h2>每月收支<small>点柱子切换月份</small></h2>
+      <div class="legend"><span><i style="background:var(--expense)"></i>支出</span><span><i style="background:var(--income)"></i>收入</span></div>
+      <div class="chart" id="trend"></div>
+      <div class="foot">转账（理财申购、还信用卡等）不算收支。</div>
+    </section>
+
+    <section class="card wide" id="todaycard">
+      <h2 id="todaytitle">今天<small id="todaynote"></small></h2>
+      <div id="todayrows"></div>
+    </section>
+
+    <section class="card wide hide-mini">
+      <h2 id="dailytitle">每日支出</h2>
+      <div class="chart" id="daily"></div>
+    </section>
+
+    <section class="card wide">
+      <div class="rows-heading"><h2 id="rowstitle" tabindex="-1">明细</h2><button id="merchant-back" class="merchant-back" type="button" hidden>返回商户卡片 ↑</button></div>
+      <div class="searchbox" role="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+        <input id="search" type="search" aria-label="搜索账目" placeholder="搜用途、商户、金额" autocomplete="off" enterkeyhint="search">
+        <button class="searchclear" id="searchclear" type="button" aria-label="清空搜索" hidden>×</button>
+      </div>
+      <div class="search-options"><label for="scope">明细范围</label><select id="scope"><option value="month">当前月份</option><option value="all">全部月份</option></select></div>
+      <div class="row-filters"><span class="seg" id="types" aria-label="收支类型"></span><span id="filter"></span></div>
+      <p class="result-summary num" id="results" role="status" aria-live="polite"></p>
+      <div id="rows"></div>
+    </section>
+  </div>
+  <div class="foot" id="gen" style="text-align:center;margin-top:14px"></div>
+</main>
+
+<dialog id="detail" aria-labelledby="detail-title">
+  <div class="detail-head"><h2 id="detail-title">账目详情</h2><button id="detail-close" type="button" autofocus aria-label="关闭账目详情">关闭</button></div>
+  <div class="detail-content" id="detail-content"></div>
+</dialog>
+
+<script>
+const PAYLOAD = {"encrypted": {"v": 1, "iter": 310000, "salt": "ltm1ybNI9E03rWIr9o7Bqw==", "nonce": "Vf8xZGPGXCzbuXu6m7EnaA==", "ct": "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", "tag": "/raP0dtKl1tI94AH5lczjTjbqwdJAMhFmR3S9RhPkzY="}};
+const KEY = "ledger-dashboard-pw";
+const TYPE_LABEL = { expense: "支出", income: "收入", transfer: "转账" };
+const SOURCE_LABEL = { manual: "手动记账", agent: "对话记账", screenshot: "付款截图", shot: "付款截图", sms: "银行短信", voice: "语音记账", wechat: "微信账单", alipay: "支付宝账单" };
+// Color follows the category, never its rank; the eight slots of the validated palette.
+const CAT_COLOR = { 餐饮: 1, 交通: 2, 购物: 3, 居住: 4, 娱乐: 5, 医疗: 6, 教育: 7, 人情: 8 };
+const ICON = {
+  餐饮: "🍜", 交通: "🚇", 购物: "🛍️", 居住: "🏠", 娱乐: "🎮", 医疗: "💊", 教育: "📚", 人情: "🎁", 金融: "💳", 其他: "📦",
+  工资: "💼", 副业: "💡", 理财: "📈", 退款: "↩️", 转账: "🔁",
+};
+const SUB_ICON = { 早餐: "🥐", 午餐: "🍱", 晚餐: "🍲", 外卖: "🛵", 零食饮料: "🧋", 聚餐: "🍻", 打车: "🚕", 共享单车: "🚲", 火车飞机: "✈️", 加油: "⛽",
+  电影演出: "🎬", 游戏: "🎮", 旅行: "🧳", 运动健身: "🏃", 会员订阅: "📺", 红包礼金: "🧧", 红包: "🧧", 房租: "🏠", 水电燃气: "💡", 宽带话费: "📶", 书籍: "📚", 药品: "💊" };
+
+// ---------- decrypt (mirrors finance/dashboard.py) ----------
+const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+function cat(a, b) { const o = new Uint8Array(a.length + b.length); o.set(a); o.set(b, a.length); return o; }
+async function decrypt(box, password) {
+  const subtle = crypto.subtle;
+  const base = await subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = new Uint8Array(await subtle.deriveBits(
+    { name: "PBKDF2", salt: b64(box.salt), iterations: box.iter, hash: "SHA-256" }, base, 512));
+  const hk = k => subtle.importKey("raw", k, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const encKey = await hk(bits.slice(0, 32)), macKey = await hk(bits.slice(32));
+  const nonce = b64(box.nonce), ct = b64(box.ct), tag = b64(box.tag);
+  const mac = new Uint8Array(await subtle.sign("HMAC", macKey, cat(nonce, ct)));
+  if (mac.length !== tag.length || mac.some((x, i) => x !== tag[i])) throw new Error("bad password");
+  const n = Math.ceil(ct.length / 32), jobs = [];
+  for (let i = 0; i < n; i++) {
+    const ctr = new Uint8Array(4); new DataView(ctr.buffer).setUint32(0, i);
+    jobs.push(subtle.sign("HMAC", encKey, cat(nonce, ctr)));
+  }
+  const blocks = await Promise.all(jobs), out = new Uint8Array(ct.length);
+  blocks.forEach((b, i) => { const s = new Uint8Array(b); for (let j = 0; j < 32 && i * 32 + j < ct.length; j++) out[i * 32 + j] = ct[i * 32 + j] ^ s[j]; });
+  return JSON.parse(new TextDecoder().decode(out));
+}
+function store(fn) { try { return fn(); } catch (e) { return null; } }
+// Tell the Mac menu bar app (if this page runs inside it) what to show next to the icon.
+function notifyApp(msg) { try { window.webkit.messageHandlers.ledger.postMessage(msg); } catch (e) {} }
+
+async function boot() {
+  if (new URLSearchParams(location.search).has("app")) document.body.classList.add("app", "mini");
+  if (PAYLOAD && PAYLOAD.data) return start(PAYLOAD.data);
+  const lock = document.getElementById("lock"), err = document.getElementById("lockerr");
+  const saved = store(() => localStorage.getItem(KEY));
+  if (saved) {
+    try { return start(await decrypt(PAYLOAD.encrypted, saved)); } catch (e) { store(() => localStorage.removeItem(KEY)); }
+  }
+  lock.hidden = false;
+  notifyApp({ locked: true });
+  if (!window.crypto || !crypto.subtle) err.textContent = "这个浏览器不支持解密（需要 https 网址）。";
+  document.getElementById("lockform").addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const pw = document.getElementById("pw").value;
+    err.textContent = "解密中…";
+    try {
+      const data = await decrypt(PAYLOAD.encrypted, pw);
+      if (document.getElementById("remember").checked) store(() => localStorage.setItem(KEY, pw));
+      lock.hidden = true; err.textContent = "";
+      start(data);
+    } catch (e) { err.textContent = "密码不对，再试一次。"; }
+  });
+}
+
+// ---------- helpers ----------
+const fmt = v => (v < 0 ? "-¥" : "¥") + Math.abs(v).toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtInt = v => (v < 0 ? "-¥" : "¥") + Math.round(Math.abs(v)).toLocaleString("zh-CN");
+const fmtShort = v => v >= 10000 ? (v / 10000).toFixed(v >= 100000 ? 0 : 1) + "万" : Math.round(v).toLocaleString("zh-CN");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const sum = a => a.reduce((s, t) => s + t.amount, 0);
+const colorOf = c => `var(--c${CAT_COLOR[c] || 0})`;
+const iconOf = t => SUB_ICON[t.subcategory] || ICON[t.category] || (t.type === "transfer" ? "🔁" : "📦");
+const tint = c => `background: color-mix(in srgb, ${colorOf(c)} 16%, transparent)`;
+const WEEK = "日一二三四五六";
+const ns = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent) { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function niceMax(v) {
+  if (v <= 0) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v))), m = v / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p;
+}
+function addMonths(ym, n) { let [y, m] = ym.split("-").map(Number); m += n; while (m < 1) { m += 12; y--; } while (m > 12) { m -= 12; y++; } return y + "-" + String(m).padStart(2, "0"); }
+function monthLabel(ym) { const [y, m] = ym.split("-"); return `${y}年${+m}月`; }
+function todayISO() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
+function barPath(x, y, w, h) {
+  if (h <= 0) return "";
+  const r = Math.min(4, w / 2, h);
+  return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
+}
+
+// Search and details use the same decrypted rows as the charts; nothing is sent to a server.
+const normalizeSearch = s => String(s ?? "").normalize("NFKC").toLowerCase().trim();
+const merchantName = name => String(name ?? "").normalize("NFKC").replace(/\s+/g, " ").trim();
+const NON_MERCHANTS = new Set(["", "/", "-", "--", "未知", "未知商户", "未知商家", "商户未知", "商户不明", "未记录", "其他",
+  "微信", "微信支付", "wechat", "wechatpay", "支付宝", "支付宝支付", "alipay", "财付通", "二维码收款", "二维码付款", "收款码", "付款", "收款", "转账"]);
+function merchantKey(name) {
+  const key = merchantName(name).toLowerCase();
+  return NON_MERCHANTS.has(key.replace(/\s/g, "")) ? "" : key;
+}
+function merchantSpending(rows, month) {
+  const groups = new Map();
+  rows.forEach(t => {
+    if (t.type !== "expense" || !t.date.startsWith(month)) return;
+    const key = merchantKey(t.counterparty);
+    if (!key) return;
+    const last = `${t.date} ${t.time || ""}`, currency = t.currency || "CNY";
+    const group = groups.get(key) || { key, name: merchantName(t.counterparty), count: 0, last, category: t.category, cents: new Map() };
+    group.count += 1;
+    group.cents.set(currency, (group.cents.get(currency) || 0) + Math.round(t.amount * 100));
+    if (last >= group.last) { group.last = last; group.name = merchantName(t.counterparty); group.category = t.category; }
+    groups.set(key, group);
+  });
+  return [...groups.values()].map(({ cents, ...group }) => ({ ...group,
+    totals: [...cents].sort(([a], [b]) => a.localeCompare(b)).map(([currency, amount]) => ({ currency, amount: amount / 100 })),
+  })).sort((a, b) => b.count - a.count || b.last.localeCompare(a.last) || a.key.localeCompare(b.key, "zh-CN"));
+}
+function merchantMarkup(group, index, selected = false) {
+  const totals = group.totals.map(transactionMoney).join(" · ");
+  return `<button class="merchant" type="button" data-merchant-index="${index}" aria-pressed="${selected}" title="${esc(group.name)}" aria-label="${esc(`查看${group.name}的历史账目，所选月份 ${group.count} 笔消费，累计 ${totals}`)}">
+    <span class="merchant-head"><span class="ico" style="${tint(group.category)}" aria-hidden="true">${ICON[group.category] || "🏪"}</span><span class="merchant-name">${esc(group.name)}</span></span>
+    <span class="merchant-count">${group.count} 笔消费</span>
+    <span class="merchant-totals num">${group.totals.map(t => `<span class="merchant-total">${esc(transactionMoney(t))}</span>`).join("")}</span>
+    <span class="merchant-action">查看历史账目 ›</span></button>`;
+}
+const sourceLabel = kind => Object.prototype.hasOwnProperty.call(SOURCE_LABEL, kind) ? SOURCE_LABEL[kind] : kind || "来源未记录";
+const sourcesOf = t => Array.isArray(t.sources) ? t.sources : [];
+function matchesSearch(t, query) {
+  const tokens = normalizeSearch(query).split(/\s+/).filter(Boolean);
+  const haystack = normalizeSearch([t.description, t.counterparty, t.category, t.subcategory, t.account, t.date, t.time,
+    ...sourcesOf(t).flatMap(([kind, ref]) => [sourceLabel(kind), ref])].filter(Boolean).join("\n"));
+  return tokens.every(token => {
+    const amount = token.replace(/^¥/, "").replace(/元$/, "").replace(/,/g, "");
+    if (/^\d+(?:\.\d{1,2})?$/.test(amount)) return Math.round(Number(amount) * 100) === Math.round(t.amount * 100) ||
+      sourcesOf(t).some(([, ref]) => normalizeSearch(ref) === token);
+    return haystack.includes(token);
+  });
+}
+function filterTransactions(rows, filters) {
+  return rows.filter(t => (filters.scope === "all" || t.date.startsWith(filters.month)) &&
+    (filters.type === "all" || t.type === filters.type) && (!filters.category || t.category === filters.category) &&
+    (!filters.merchant || merchantKey(t.counterparty) === filters.merchant.key) && matchesSearch(t, filters.query));
+}
+function transactionMoney(t) {
+  const currency = t.currency || "CNY";
+  return currency === "CNY" ? fmt(t.amount) : `${currency} ${t.amount.toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+function signedMoney(t) { return (t.type === "income" ? "+" : t.type === "expense" ? "-" : "") + transactionMoney(t); }
+function resultsSummary(rows, filters) {
+  const parts = [filters.scope === "all" ? "全部月份" : monthLabel(filters.month), TYPE_LABEL[filters.type] || "全部类型"];
+  if (filters.merchant) parts.push(filters.merchant.name);
+  if (filters.category) parts.push(filters.category);
+  parts.push(`${rows.length} 笔`);
+  const totals = new Map();
+  rows.forEach(t => {
+    const key = `${t.type}:${t.currency || "CNY"}`;
+    const group = totals.get(key) || { type: t.type, currency: t.currency || "CNY", amount: 0 };
+    group.amount += t.amount; totals.set(key, group);
+  });
+  for (const group of totals.values()) parts.push(`${filters.type === "all" ? TYPE_LABEL[group.type] : "合计"} ${transactionMoney(group)}`);
+  return parts.join(" · ");
+}
+function detailMarkup(t) {
+  const status = { confirmed: "已确认", guessed: "推断 · 用途由系统推断", review: "待补全" }[t.status] || "状态未记录";
+  const fields = [
+    ["交易时间", `${t.date}${t.time ? " " + t.time : " · 时间未记录"}`],
+    ["交易对方", t.counterparty || "未记录"],
+    ["支付 / 收款", t.account || "未记录"],
+    ["分类", [t.category, t.subcategory].filter(Boolean).join(" / ") || "未分类"],
+    ["币种", t.currency || "CNY"],
+  ];
+  const sources = sourcesOf(t);
+  return `<div class="detail-kind">${esc(TYPE_LABEL[t.type] || t.type)}</div>
+    <div class="detail-amount num${t.type === "income" ? " in" : ""}">${esc(signedMoney(t))}</div>
+    <p class="detail-description">${esc(t.description || "未填写用途")}</p>
+    <div class="detail-status">${esc(status)}</div>
+    <dl class="detail-fields">${fields.map(([label, value]) => `<dt>${esc(label)}</dt><dd>${esc(value)}</dd>`).join("")}</dl>
+    <section class="detail-sources"><h3>来源记录${sources.length ? ` · ${sources.length} 项` : ""}</h3>
+    ${sources.length ? `<ul>${sources.map(([kind, ref]) => `<li><b>${esc(sourceLabel(kind))}</b><span class="source-ref">${esc(ref || "未记录来源编号")}</span></li>`).join("")}</ul>` : '<div class="foot">来源未记录</div>'}</section>`;
+}
+
+const tip = document.getElementById("tip");
+function showTip(ev, html) {
+  tip.innerHTML = html; tip.style.display = "block";
+  const r = tip.getBoundingClientRect();
+  let x = ev.clientX + 12, y = ev.clientY + 12;
+  if (x + r.width > innerWidth - 8) x = ev.clientX - r.width - 12;
+  if (y + r.height > innerHeight - 8) y = ev.clientY - r.height - 12;
+  tip.style.left = Math.max(8, x) + "px"; tip.style.top = Math.max(8, y) + "px";
+}
+function hideTip() { tip.style.display = "none"; }
+document.addEventListener("scroll", hideTip, { passive: true });
+function hover(node, html) {
+  node.addEventListener("pointermove", ev => { if (ev.pointerType === "mouse") showTip(ev, html); });
+  node.addEventListener("pointerleave", hideTip);
+}
+
+// ---------- app ----------
+let TX = [], MONTHS = [], MERCHANTS = [], state = { month: null, category: null, merchant: null, showAllMerchants: false, type: "expense", all: false, query: "", scope: "month" };
+const PAGE = 30, MINI_ROWS = 10, MINI_KEY = "ledger-dashboard-mini";
+const LOADED = Date.now();
+const isMini = () => document.body.classList.contains("mini");
+
+function start(data) {
+  const c = data.columns;
+  TX = data.rows.map((r, index) => ({ ...Object.fromEntries(c.map((k, i) => [k, r[i]])), _index: index }));
+  state.month = todayISO().slice(0, 7);
+  bindTransactionControls();
+  document.getElementById("app").hidden = false;
+  document.getElementById("gen").textContent = "数据更新于 " + data.generated_at.replace("T", " ");
+  const mini = document.getElementById("mini");
+  const setMini = on => document.body.classList.toggle("mini", on || document.body.classList.contains("app"));
+  setMini(store(() => localStorage.getItem(MINI_KEY)) === "1" || new URLSearchParams(location.search).has("mini"));
+  mini.addEventListener("click", () => {
+    const on = !isMini();
+    store(() => localStorage.setItem(MINI_KEY, on ? "1" : "0"));
+    setMini(on); render();
+  });
+  // 窗口常开着：回到窗口时如果已经过了半小时，重新加载拿到最新数据
+  const refresh = () => { if (document.visibilityState === "visible" && Date.now() - LOADED > 30 * 60 * 1000) location.reload(); };
+  document.addEventListener("visibilitychange", refresh);
+  addEventListener("focus", refresh);
+  if (!TX.length) {
+    document.getElementById("hero").innerHTML = '<div class="label">账本还是空的</div>';
+    document.getElementById("month").innerHTML = `<option value="${state.month}">${monthLabel(state.month)}</option>`;
+    renderToday(); renderMerchants(); renderRows(); notifyApp({ title: "¥0" }); return;
+  }
+  const first = TX[0].date.slice(0, 7), last = [todayISO().slice(0, 7), TX[TX.length - 1].date.slice(0, 7)].sort()[1];
+  for (let m = first; m <= last; m = addMonths(m, 1)) MONTHS.push(m);
+  const sel = document.getElementById("month");
+  sel.innerHTML = MONTHS.slice().reverse().map(m => `<option value="${m}">${monthLabel(m)}</option>`).join("");
+  sel.addEventListener("change", () => setMonth(sel.value));
+  let t; addEventListener("resize", () => { clearTimeout(t); t = setTimeout(render, 120); });
+  notifyApp({ title: fmtInt(sum(monthTx(last).filter(t => t.type === "expense"))), generated_at: data.generated_at });
+  setMonth(last);
+}
+
+function setMonth(m) {
+  state.month = m; state.category = null; state.all = false; state.scope = "month";
+  state.merchant = null; state.showAllMerchants = false;
+  document.getElementById("month").value = m;
+  document.getElementById("scope").value = "month";
+  render();
+}
+function monthTx(m) { return TX.filter(t => t.date.startsWith(m)); }
+function render() { hideTip(); renderHero(); renderToday(); if (isMini()) renderWeek(); renderMerchants(); renderCats(); if (!isMini()) { renderTrend(); renderDaily(); } renderRows(); }
+
+function renderMerchants() {
+  MERCHANTS = merchantSpending(TX, state.month);
+  document.getElementById("merchantnote").textContent = `${monthLabel(state.month)} · ${MERCHANTS.length} 家`;
+  const shown = state.showAllMerchants ? MERCHANTS : MERCHANTS.slice(0, isMini() || innerWidth <= 600 ? 4 : 6);
+  document.getElementById("merchants").innerHTML = shown.length ? shown.map((g, i) => merchantMarkup(g, i, state.merchant?.key === g.key)).join("")
+    : '<div class="empty merchant-empty">所选月份暂无可统计的商户支出</div>';
+  const more = document.getElementById("merchant-more");
+  more.hidden = shown.length >= MERCHANTS.length;
+  more.textContent = `显示全部 ${MERCHANTS.length} 家商户`;
+}
+function selectMerchant(group) {
+  state.merchant = { key: group.key, name: group.name };
+  state.scope = "all"; state.type = "expense"; state.category = null; state.query = ""; state.all = false;
+  document.getElementById("scope").value = "all";
+  document.getElementById("search").value = "";
+  renderMerchants(); renderCats(); renderRows();
+  const title = document.getElementById("rowstitle");
+  title.scrollIntoView({ block: "start" }); title.focus({ preventScroll: true });
+}
+
+function bindTransactionControls() {
+  const search = document.getElementById("search"), clear = document.getElementById("searchclear"), detail = document.getElementById("detail");
+  let trigger = null;
+  document.getElementById("merchants").addEventListener("click", ev => {
+    const button = ev.target.closest("button[data-merchant-index]");
+    if (!button) return;
+    const group = MERCHANTS[Number(button.dataset.merchantIndex)];
+    if (group) selectMerchant(group);
+  });
+  document.getElementById("merchant-more").addEventListener("click", () => { state.showAllMerchants = true; renderMerchants(); });
+  document.getElementById("merchant-back").addEventListener("click", () => {
+    document.getElementById("merchantcard").scrollIntoView({ block: "start" });
+    document.getElementById("merchant-title").focus({ preventScroll: true });
+  });
+  document.getElementById("find").addEventListener("click", () => {
+    // In the small window the search box stays folded away until this button opens it.
+    if (isMini()) {
+      if (document.body.classList.contains("searching") && !state.query) { document.body.classList.remove("searching"); return; }
+      document.body.classList.add("searching");
+    }
+    search.scrollIntoView({ block: "center" }); search.focus({ preventScroll: true });
+  });
+  search.addEventListener("input", () => { state.query = search.value; state.all = false; renderRows(); });
+  search.addEventListener("keydown", ev => {
+    if (ev.key === "Enter" && !ev.isComposing) { ev.preventDefault(); search.blur(); document.getElementById("results").scrollIntoView({ block: "start" }); }
+  });
+  clear.addEventListener("click", () => { search.value = ""; state.query = ""; state.all = false; renderRows(); search.focus(); });
+  document.getElementById("scope").addEventListener("change", ev => { state.scope = ev.target.value; state.all = false; renderRows(); });
+  const openDetail = ev => {
+    const button = ev.target.closest("button[data-tx-index]");
+    if (!button) return;
+    const t = TX[Number(button.dataset.txIndex)];
+    if (!t) return;
+    trigger = button; hideTip();
+    document.getElementById("detail-content").innerHTML = detailMarkup(t);
+    document.body.classList.add("detail-open");
+    detail.showModal(); detail.scrollTop = 0;
+  };
+  document.getElementById("rows").addEventListener("click", openDetail);
+  document.getElementById("todayrows").addEventListener("click", openDetail);
+  document.getElementById("detail-close").addEventListener("click", () => detail.close());
+  detail.addEventListener("click", ev => {
+    if (ev.target !== detail) return;
+    const box = detail.getBoundingClientRect();
+    if (ev.clientX < box.left || ev.clientX > box.right || ev.clientY < box.top || ev.clientY > box.bottom) detail.close();
+  });
+  detail.addEventListener("close", () => {
+    document.body.classList.remove("detail-open");
+    if (trigger && trigger.isConnected) trigger.focus({ preventScroll: true });
+    else search.focus({ preventScroll: true });
+  });
+}
+
+function renderHero() {
+  const cur = monthTx(state.month), prevM = addMonths(state.month, -1);
+  const curExp = cur.filter(t => t.type === "expense");
+  const exp = sum(curExp), inc = sum(cur.filter(t => t.type === "income"));
+  const prev = TX.filter(t => t.date.startsWith(prevM) && t.type === "expense");
+  const [y, m] = state.month.split("-").map(Number), [py, pm] = prevM.split("-").map(Number);
+  const today = todayISO(), isCurrent = state.month === today.slice(0, 7);
+  const n = new Date(y, m, 0).getDate(), pn = new Date(py, pm, 0).getDate();
+  const days = isCurrent ? +today.slice(8) : n;
+  // compare with last month up to the same day, so mid-month numbers are fair
+  const pSame = isCurrent ? sum(prev.filter(t => +t.date.slice(8) <= days)) : sum(prev);
+  let delta = '<span class="delta">上月没有支出记录</span>';
+  if (pSame > 0) {
+    const d = (exp - pSame) / pSame * 100;
+    delta = `<span class="delta">${isCurrent ? "比上月同期" : "比上月"} <b class="${d > 0 ? "more-spend" : "less-spend"}">${d > 0 ? "↑" : "↓"} ${Math.abs(d).toFixed(0)}%</b> · 上月同期 ${fmt(pSame)}</span>`;
+  }
+  const daily = Array.from({ length: n }, () => 0), pdaily = Array.from({ length: pn }, () => 0);
+  curExp.forEach(t => { daily[+t.date.slice(8) - 1] += t.amount; });
+  prev.forEach(t => { pdaily[+t.date.slice(8) - 1] += t.amount; });
+  const guessed = cur.filter(t => t.status === "guessed").length;
+  const peak = daily.reduce((b, v, i) => v > daily[b] ? i : b, 0);
+  const first = isCurrent
+    ? `<div><span>今天</span><b>${fmt(daily[days - 1])}</b></div>`
+    : `<div><span>最多一天 · ${m}月${peak + 1}日</span><b>${fmt(daily[peak])}</b></div>`;
+  const [whole, cents] = fmt(exp).split(".");
+  document.getElementById("hero").innerHTML = `
+    <div class="head">
+      <div><div class="label">${m}月支出</div><div class="value num">${whole}<span class="cents">.${cents}</span></div>${delta}</div>
+      <div class="legend2"><span><i style="color:var(--expense)"></i>本月累计</span>${prev.length ? '<span><i style="color:var(--text-3);border-top-style:dashed"></i>上月</span>' : ""}</div>
+    </div>
+    <div class="cum" id="cum"></div>
+    <div class="stats num">
+      ${first}
+      <div><span>日均</span><b>${fmt(exp / Math.max(days, 1))}</b></div>
+      <div><span>支出笔数</span><b>${curExp.length} 笔</b></div>
+      <div><span>收入</span><b>${fmt(inc)}</b></div>
+      <div><span>结余</span><b>${fmt(inc - exp)}</b></div>
+      <div><span>推断待核对</span><b>${guessed} 笔</b></div>
+    </div>`;
+  renderPace(daily.slice(0, days), prev.length ? pdaily : [], n, m, pm);
+}
+
+// Running total of this month's spending against last month's, day by day.
+function renderPace(daily, pdaily, n, m, pm) {
+  const box = document.getElementById("cum");
+  const cum = a => { let s = 0; return a.map(v => s += v); };
+  const cur = cum(daily), prev = cum(pdaily);
+  const W = box.clientWidth || 340, H = isMini() ? 76 : 120, T = 6, B = 16;
+  const max = niceMax(Math.max(cur[cur.length - 1] || 0, prev[prev.length - 1] || 0, 1));
+  const x = i => (W - 4) * i / Math.max(n - 1, 1) + 2, y = v => T + (H - T - B) * (1 - v / max);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": `${m}月累计支出和上月对比` }, box);
+  el("line", { x1: 0, x2: W, y1: y(0), y2: y(0), stroke: "var(--grid)", "stroke-width": 1 }, svg);
+  const line = a => a.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+  if (prev.length) el("path", { d: line(prev.slice(0, n)), fill: "none", stroke: "var(--text-3)", "stroke-width": 1.5, "stroke-dasharray": "3 3", opacity: .7 }, svg);
+  if (cur.length) {
+    el("path", { d: line(cur) + `L${x(cur.length - 1)},${y(0)}L${x(0)},${y(0)}Z`, fill: "var(--expense)", opacity: .1 }, svg);
+    el("path", { d: line(cur), fill: "none", stroke: "var(--expense)", "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+    el("circle", { cx: x(cur.length - 1), cy: y(cur[cur.length - 1]), r: 4, fill: "var(--expense)", stroke: "var(--surface)", "stroke-width": 2 }, svg);
+  }
+  [[0, "1日"], [Math.floor((n - 1) / 2), `${Math.floor((n - 1) / 2) + 1}日`], [n - 1, `${n}日`]].forEach(([i, t], k) =>
+    el("text", { x: x(i), y: H - 3, "text-anchor": ["start", "middle", "end"][k] }, svg).textContent = t);
+  const guide = el("line", { y1: T, y2: y(0), stroke: "var(--text-3)", "stroke-width": 1, opacity: 0 }, svg);
+  const hit = el("rect", { x: 0, y: 0, width: W, height: H, fill: "transparent" }, svg);
+  hit.addEventListener("pointermove", ev => {
+    const r = svg.getBoundingClientRect(), i = Math.max(0, Math.min(n - 1, Math.round((ev.clientX - r.left) / r.width * W / ((W - 4) / Math.max(n - 1, 1)))));
+    guide.setAttribute("x1", x(i)); guide.setAttribute("x2", x(i)); guide.setAttribute("opacity", .5);
+    showTip(ev, `<b>${m}月${i + 1}日</b>` +
+      (i < cur.length ? `<div class="row"><span>当天</span><span>${fmt(daily[i])}</span></div><div class="row"><span>本月累计</span><span>${fmt(cur[i])}</span></div>` : '<div class="sub">还没到这一天</div>') +
+      (i < prev.length ? `<div class="row"><span>${pm}月同日累计</span><span>${fmt(prev[i])}</span></div>` : ""));
+  });
+  hit.addEventListener("pointerleave", () => { guide.setAttribute("opacity", 0); hideTip(); });
+}
+
+// Mini only: the last seven days (ending today, or the month's last day for a past month).
+function renderWeek() {
+  const today = todayISO(), [y, m] = state.month.split("-").map(Number);
+  const end = state.month === today.slice(0, 7) ? new Date(today + "T00:00:00") : new Date(y, m, 0);
+  const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(end); d.setDate(end.getDate() - 6 + i); return d; });
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const vals = days.map(d => sum(TX.filter(t => t.type === "expense" && t.date === iso(d))));
+  const max = Math.max(...vals, 1), total = vals.reduce((a, b) => a + b, 0);
+  document.getElementById("weeknote").textContent = `共 ${fmt(total)}`;
+  document.getElementById("week").innerHTML = days.map((d, i) => {
+    const key = iso(d), label = key === today ? "今" : WEEK[d.getDay()];
+    return `<div class="d${key === today ? " today" : ""}" title="${d.getMonth() + 1}月${d.getDate()}日 ${fmt(vals[i])}">
+      <span class="v">${vals[i] ? fmtShort(vals[i]) : ""}</span><span class="b" style="height:${(vals[i] / max * 56).toFixed(1)}px"></span><span class="w">${label}</span></div>`;
+  }).join("");
+}
+
+function renderCats() {
+  const exp = monthTx(state.month).filter(t => t.type === "expense"), total = sum(exp);
+  const groups = {};
+  exp.forEach(t => { (groups[t.category] ||= []).push(t); });
+  const list = Object.entries(groups).map(([c, ts]) => ({ c, ts, v: sum(ts) })).sort((a, b) => b.v - a.v);
+  const box = document.getElementById("cats"), donut = document.getElementById("donut");
+  document.getElementById("catnote").textContent = list.length ? `${list.length} 类` : "";
+  donut.innerHTML = "";
+  if (!list.length) { box.innerHTML = '<div class="empty">这个月还没有支出</div>'; donut.style.display = "none"; document.getElementById("stack").innerHTML = ""; return; }
+  donut.style.display = "";
+  // donut: 2px surface gaps between segments
+  const svg = el("svg", { viewBox: "0 0 100 100", role: "img", "aria-label": "分类支出占比" }, donut);
+  const R = 40, C = 2 * Math.PI * R, gap = list.length > 1 ? 1.6 : 0;
+  el("circle", { cx: 50, cy: 50, r: R, fill: "none", stroke: "var(--surface-2)", "stroke-width": 14 }, svg);
+  let off = 0;
+  list.forEach(g => {
+    const len = g.v / total * C;
+    const seg = el("circle", { cx: 50, cy: 50, r: R, fill: "none", stroke: colorOf(g.c), "stroke-width": state.category === g.c ? 17 : 14,
+      "stroke-dasharray": `${Math.max(len - gap, 0.01)} ${C}`, "stroke-dashoffset": -off, style: "cursor:pointer" }, svg);
+    hover(seg, `<b>${esc(g.c)}</b> ${fmt(g.v)} · ${(g.v / total * 100).toFixed(0)}%`);
+    seg.addEventListener("click", () => toggleCat(g.c));
+    off += len;
+  });
+  const center = document.createElement("div");
+  center.className = "center num";
+  center.innerHTML = `<b>${fmtInt(total)}</b><span>${state.category ? esc(state.category) : "总支出"}</span>`;
+  donut.appendChild(center);
+
+  box.innerHTML = "";
+  document.getElementById("stack").innerHTML = list.map(g =>
+    `<i style="flex:${g.v.toFixed(2)};background:${colorOf(g.c)};opacity:${!state.category || state.category === g.c ? 1 : .3}"></i>`).join("");
+  const max = list[0].v;
+  list.slice(0, isMini() ? 5 : list.length).forEach(g => {
+    const b = document.createElement("button");
+    b.className = "cat" + (state.category === g.c ? " on" : "");
+    if (isMini()) b.innerHTML = `<span class="dot" style="background:${colorOf(g.c)}"></span><span class="name">${ICON[g.c] || "📦"} ${esc(g.c)}</span>
+      <span class="pct num">${(g.v / total * 100).toFixed(0)}%</span><span class="amt num">${fmt(g.v)}</span>`;
+    else b.innerHTML = `<span class="ico" style="${tint(g.c)}">${ICON[g.c] || "📦"}</span>
+      <span class="mid"><span class="name">${esc(g.c)}<span>${(g.v / total * 100).toFixed(0)}%</span></span>
+      <span class="track"><i style="width:${(g.v / max * 100).toFixed(1)}%;background:${colorOf(g.c)}"></i></span></span>
+      <span class="amt num">${fmt(g.v)}</span>`;
+    const subs = {};
+    g.ts.forEach(t => { const k = t.subcategory || "其他"; subs[k] = (subs[k] || 0) + t.amount; });
+    hover(b, `<b>${esc(g.c)}</b> · ${g.ts.length} 笔` + Object.entries(subs).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<div class="row"><span>${esc(k)}</span><span>${fmt(v)}</span></div>`).join("") + '<div class="sub">点一下只看这一类</div>');
+    b.addEventListener("click", () => toggleCat(g.c));
+    box.appendChild(b);
+  });
+}
+function toggleCat(c) {
+  state.category = state.category === c ? null : c; state.type = "expense"; state.all = false;
+  renderCats(); renderRows();
+}
+
+function renderTrend() {
+  const box = document.getElementById("trend"); box.innerHTML = "";
+  const months = MONTHS.slice(-12);
+  const vals = months.map(m => { const r = monthTx(m); return { m, exp: sum(r.filter(t => t.type === "expense")), inc: sum(r.filter(t => t.type === "income")) }; });
+  const W = box.clientWidth || 480, H = 200, L = 40, R = 2, T = 8, B = 22;
+  const max = niceMax(Math.max(...vals.map(v => Math.max(v.exp, v.inc))));
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "每月支出和收入柱状图" }, box);
+  const y = v => T + (H - T - B) * (1 - v / max);
+  for (let i = 0; i <= 2; i++) {
+    const v = max * i / 2;
+    el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: "var(--grid)", "stroke-width": 1 }, svg);
+    el("text", { x: L - 6, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = fmtShort(v);
+  }
+  const slot = (W - L - R) / months.length, bw = Math.max(4, Math.min(16, (slot - 8) / 2));
+  vals.forEach((v, i) => {
+    const cx = L + slot * i + slot / 2, sel = v.m === state.month, op = sel ? 1 : .45;
+    el("path", { d: barPath(cx - bw - 1, y(v.exp), bw, y(0) - y(v.exp)), fill: "var(--expense)", opacity: op }, svg);
+    el("path", { d: barPath(cx + 1, y(v.inc), bw, y(0) - y(v.inc)), fill: "var(--income)", opacity: op }, svg);
+    const [yy, mm] = v.m.split("-");
+    const lab = el("text", { x: cx, y: H - 5, "text-anchor": "middle", class: sel ? "sel" : "" }, svg);
+    lab.textContent = (+mm === 1 || i === 0) && slot > 34 ? `${yy.slice(2)}年${+mm}月` : `${+mm}月`;
+    const hit = el("rect", { x: cx - slot / 2, y: 0, width: slot, height: H, fill: "transparent", style: "cursor:pointer" }, svg);
+    hover(hit, `<b>${monthLabel(v.m)}</b><div class="row"><span>支出</span><span>${fmt(v.exp)}</span></div><div class="row"><span>收入</span><span>${fmt(v.inc)}</span></div><div class="row"><span>结余</span><span>${fmt(v.inc - v.exp)}</span></div>`);
+    hit.addEventListener("click", () => setMonth(v.m));
+  });
+}
+
+function renderDaily() {
+  const box = document.getElementById("daily"); box.innerHTML = "";
+  const [yy, mm] = state.month.split("-").map(Number), n = new Date(yy, mm, 0).getDate();
+  document.getElementById("dailytitle").innerHTML = `每日支出<small>${mm}月</small>`;
+  const byDay = Array.from({ length: n }, () => []);
+  monthTx(state.month).filter(t => t.type === "expense").forEach(t => byDay[+t.date.slice(8) - 1].push(t));
+  const vals = byDay.map(sum), today = todayISO();
+  const W = box.clientWidth || 600, H = 150, L = 40, R = 2, T = 8, B = 20;
+  const max = niceMax(Math.max(...vals));
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "每日支出柱状图" }, box);
+  const y = v => T + (H - T - B) * (1 - v / max);
+  for (let i = 0; i <= 2; i++) {
+    const v = max * i / 2;
+    el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: "var(--grid)", "stroke-width": 1 }, svg);
+    el("text", { x: L - 6, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = fmtShort(v);
+  }
+  const avg = vals.reduce((a, b) => a + b, 0) / n;
+  const slot = (W - L - R) / n, bw = Math.max(2, Math.min(14, slot - 3));
+  const every = slot < 14 ? 5 : slot < 22 ? 2 : 1;
+  vals.forEach((v, i) => {
+    const cx = L + slot * i + slot / 2, iso = `${state.month}-${String(i + 1).padStart(2, "0")}`;
+    el("path", { d: barPath(cx - bw / 2, y(v), bw, y(0) - y(v)), fill: "var(--expense)", opacity: iso === today ? 1 : .75 }, svg);
+    if ((i + 1) % every === 0 || i === 0) el("text", { x: cx, y: H - 4, "text-anchor": "middle", class: iso === today ? "sel" : "" }, svg).textContent = i + 1;
+    const hit = el("rect", { x: cx - slot / 2, y: 0, width: slot, height: H, fill: "transparent" }, svg);
+    const top = byDay[i].slice().sort((a, b) => b.amount - a.amount);
+    hover(hit, `<b>${mm}月${i + 1}日</b> · ${fmt(v)}` + (top.length ? top.slice(0, 5).map(t => `<div class="row"><span>${esc(t.description || t.counterparty)}</span><span>${fmt(t.amount)}</span></div>`).join("") + (top.length > 5 ? `<div class="sub">另外 ${top.length - 5} 笔</div>` : "") : '<div class="sub">没有支出</div>'));
+  });
+  if (avg > 0) {
+    el("line", { x1: L, x2: W - R, y1: y(avg), y2: y(avg), stroke: "var(--text-3)", "stroke-width": 1, "stroke-dasharray": "4 4" }, svg);
+    el("text", { x: W - R, y: y(avg) - 4, "text-anchor": "end" }, svg).textContent = "日均 " + fmtShort(avg);
+  }
+}
+
+function txMarkup(t) {
+  const sub = [t.subcategory || t.category, t.counterparty, t.account].filter(Boolean).join(" · ");
+  return `<button class="tx" type="button" data-tx-index="${t._index}" aria-haspopup="dialog" aria-label="${esc("查看账目详情：" + (t.description || t.counterparty || "用途未填写") + "，" + signedMoney(t))}"><span class="ico" style="${tint(t.category)}" aria-hidden="true">${iconOf(t)}</span>
+      <span class="what"><span class="title">${esc((t.status === "guessed" ? (t.description || "").replace(/^推测[:：]\s*/, "") : t.description) || t.counterparty || "（用途缺）")}${t.status === "guessed" ? '<span class="tag">推断</span>' : ""}</span><span class="sub">${esc(sub)}</span></span>
+      <span class="amt num${t.type === "income" ? " in" : ""}">${esc(signedMoney(t))}</span><span class="chevron" aria-hidden="true">›</span></button>`;
+}
+
+// Today's own list, always above everything else; it does not follow the filters of the full list below.
+function renderToday() {
+  const today = todayISO(), card = document.getElementById("todaycard");
+  card.hidden = state.month !== today.slice(0, 7);
+  if (card.hidden) return;
+  const rows = TX.filter(t => t.date === today).reverse();
+  const exp = rows.filter(t => t.type === "expense");
+  const d = new Date(today + "T00:00:00");
+  document.getElementById("todaytitle").firstChild.textContent = `今天 · ${d.getMonth() + 1}月${d.getDate()}日 周${WEEK[d.getDay()]}`;
+  document.getElementById("todaynote").textContent = exp.length ? `支出 ${fmt(sum(exp))} · ${exp.length} 笔` : "";
+  // only spending here; income and transfers are counted in one line and stay in the full list below
+  const others = rows.length - exp.length;
+  document.getElementById("todayrows").innerHTML = (exp.length ? exp.map(txMarkup).join("") : '<div class="empty">今天还没有支出</div>') +
+    (others ? `<div class="foot">另有 ${others} 笔收入或转账，在下面的明细里</div>` : "");
+}
+
+function renderRows() {
+  const all = filterTransactions(TX, { ...state, type: "all", category: null });
+  const tabs = document.getElementById("types");
+  tabs.innerHTML = "";
+  ["all", "expense", "income", "transfer"].forEach(ty => {
+    const b = document.createElement("button");
+    b.className = state.type === ty ? "on" : "";
+    b.setAttribute("aria-pressed", String(state.type === ty));
+    b.textContent = `${TYPE_LABEL[ty] || "全部"} ${ty === "all" ? all.length : all.filter(t => t.type === ty).length}`;
+    b.addEventListener("click", () => { state.type = ty; state.all = false; if (ty !== "expense") state.category = null; renderCats(); renderRows(); });
+    tabs.appendChild(b);
+  });
+  const filter = document.getElementById("filter");
+  filter.innerHTML = (state.category ? `<button class="filter" id="category-filter" type="button">${esc(state.category)} ✕</button>` : "") +
+    (state.merchant ? `<button class="filter" id="merchant-filter" type="button" aria-label="${esc("清除商户筛选：" + state.merchant.name)}">${esc(state.merchant.name)} ✕</button>` : "");
+  if (state.category) document.getElementById("category-filter").addEventListener("click", () => toggleCat(state.category));
+  if (state.merchant) document.getElementById("merchant-filter").addEventListener("click", () => { state.merchant = null; state.all = false; renderMerchants(); renderRows(); });
+
+  const mini = isMini();
+  document.getElementById("rowstitle").textContent = state.merchant ? (state.scope === "all" ? "商户历史" : "商户明细") : mini ? "最近" : "明细";
+  document.getElementById("merchant-back").hidden = !state.merchant;
+  document.getElementById("searchclear").hidden = !state.query;
+  if (state.query) document.body.classList.add("searching");
+  const rows = filterTransactions(all, { ...state, scope: "all", query: "" }).reverse();
+  document.getElementById("results").textContent = resultsSummary(rows, state);
+  const shown = state.all ? rows : rows.slice(0, mini ? MINI_ROWS : PAGE);
+  if (!rows.length) { document.getElementById("rows").innerHTML = '<div class="empty">没有匹配的账目，可调整搜索词或筛选条件</div>'; return; }
+  let html = "", day = null;
+  shown.forEach(t => {
+    if (t.date !== day) {
+      day = t.date;
+      const d = new Date(day + "T00:00:00");
+      const dayRows = rows.filter(r => r.date === day);
+      const label = day === todayISO() ? "今天" : `${state.scope === "all" ? d.getFullYear() + "年" : ""}${d.getMonth() + 1}月${d.getDate()}日 周${WEEK[d.getDay()]}`;
+      const totals = new Map();
+      dayRows.forEach(t => { const key = t.currency || "CNY"; totals.set(key, (totals.get(key) || 0) + t.amount); });
+      const dayTotal = state.type === "all" ? `${dayRows.length} 笔` : [...totals].map(([currency, amount]) => transactionMoney({ currency, amount })).join(" · ");
+      html += `<div class="day"><span>${label}</span><span class="num">${esc(dayTotal)}</span></div>`;
+    }
+    html += txMarkup(t);
+  });
+  if (shown.length < rows.length) html += `<button class="more" id="more">显示全部 ${rows.length} 笔</button>`;
+  document.getElementById("rows").innerHTML = html;
+  const more = document.getElementById("more");
+  if (more) more.addEventListener("click", () => { state.all = true; renderRows(); });
+}
+
+boot();
+</script>
+</body>
+</html>
